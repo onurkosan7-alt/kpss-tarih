@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KPSS Tarih</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0a07;
+    --surface: #1a1410;
+    --surface2: #241c14;
+    --gold: #c9a84c;
+    --gold2: #e8c97a;
+    --red: #8b2635;
+    --cream: #f2e8d5;
+    --muted: #8a7a65;
+    --correct: #2e7d5b;
+    --wrong: #8b2635;
+    --radius: 14px;
+  }
+
+  html, body {
+    height: 100%; overflow: hidden;
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'Source Serif 4', serif;
+  }
+
+  /* ── PHONE SHELL ── */
+  .phone {
+    max-width: 430px; height: 100dvh;
+    margin: 0 auto;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+
+  /* ── VIEWS ── */
+  .view { display: none; flex-direction: column; height: 100%; animation: fadeIn .3s ease; }
+  .view.active { display: flex; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--surface);
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid #2e2418;
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .topbar .back {
+    width:34px; height:34px; border-radius:50%;
+    background:var(--surface2); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--gold); font-size:16px; flex-shrink:0;
+  }
+  .topbar h1 { font-family:'Playfair Display',serif; font-size:18px; color:var(--gold); flex:1; }
+  .topbar .badge {
+    background:var(--red); color:#fff; font-size:11px;
+    padding:2px 8px; border-radius:20px; font-weight:600;
+  }
+
+  /* ── SCROLL AREA ── */
+  .scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .scroll::-webkit-scrollbar { display:none; }
+
+  /* ── HOME ── */
+  .home-header {
+    background: linear-gradient(160deg, #1a1108 0%, #0d0a07 100%);
+    padding: 36px 24px 28px;
+    position: relative; overflow: hidden;
+  }
+  .home-header::before {
+    content:''; position:absolute; inset:0;
+    background: radial-gradient(ellipse at 80% 0%, rgba(201,168,76,.15) 0%, transparent 60%);
+  }
+  .home-header .logo {
+    font-family:'Playfair Display',serif;
+    font-size:13px; letter-spacing:4px; text-transform:uppercase;
+    color:var(--gold); opacity:.7; margin-bottom:10px;
+  }
+  .home-header h2 {
+    font-family:'Playfair Display',serif;
+    font-size:30px; font-weight:900; color:var(--cream);
+    line-height:1.15; margin-bottom:6px;
+  }
+  .home-header h2 span { color:var(--gold); }
+  .home-header p { color:var(--muted); font-size:13px; font-weight:300; }
+
+  .stat-strip {
+    display:flex; background:var(--surface);
+    border-bottom:1px solid #2e2418;
+  }
+  .stat-strip .stat {
+    flex:1; text-align:center; padding:14px 8px;
+    border-right:1px solid #2e2418;
+  }
+  .stat-strip .stat:last-child { border-right:none; }
+  .stat-strip .stat .num { font-family:'Playfair Display',serif; font-size:22px; color:var(--gold); }
+  .stat-strip .stat .lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+
+  .section-title {
+    font-size:11px; letter-spacing:3px; text-transform:uppercase;
+    color:var(--muted); padding:20px 20px 10px;
+  }
+
+  /* ── TOPIC CARDS ── */
+  .topic-card {
+    margin:0 16px 10px;
+    background:var(--surface);
+    border-radius:var(--radius);
+    border:1px solid #2e2418;
+    overflow:hidden; cursor:pointer;
+    transition:transform .15s, border-color .15s;
+    display:flex; align-items:stretch;
+  }
+  .topic-card:active { transform:scale(.98); }
+  .topic-card .accent { width:5px; flex-shrink:0; }
+  .topic-card .body { flex:1; padding:16px; }
+  .topic-card .body h3 { font-family:'Playfair Display',serif; font-size:16px; color:var(--cream); margin-bottom:4px; }
+  .topic-card .body p { font-size:12px; color:var(--muted); font-weight:300; }
+  .topic-card .meta { padding:14px 16px 14px 0; display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; }
+  .topic-card .meta .tag { font-size:10px; background:var(--surface2); color:var(--muted); padding:3px 8px; border-radius:20px; }
+  .topic-card .meta .arrow { color:var(--gold); font-size:18px; margin-top:8px; }
+  .topic-card:hover { border-color:var(--gold); }
+
+  /* ── BOTTOM NAV ── */
+  .bottomnav {
+    background:var(--surface);
+    border-top:1px solid #2e2418;
+    display:flex; flex-shrink:0;
+  }
+  .bottomnav button {
+    flex:1; border:none; background:transparent;
+    padding:12px 8px 10px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    color:var(--muted); transition:color .15s;
+  }
+  .bottomnav button.active { color:var(--gold); }
+  .bottomnav button .icon { font-size:20px; }
+  .bottomnav button .lbl { font-size:9px; text-transform:uppercase; letter-spacing:1px; }
+
+  /* ── CONTENT VIEW ── */
+  .content-body { padding:20px; }
+  .content-body h3 { font-family:'Playfair Display',serif; font-size:22px; color:var(--gold2); margin-bottom:4px; }
+  .content-body .period { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:20px; }
+
+  .subtopic {
+    margin-bottom:20px;
+    background:var(--surface2);
+    border-radius:12px;
+    overflow:hidden;
+    border:1px solid #2e2418;
+  }
+  .subtopic-header {
+    padding:14px 16px; cursor:pointer;
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'Playfair Display',serif; font-size:15px; color:var(--cream);
+  }
+  .subtopic-header .chevron { color:var(--gold); transition:transform .25s; font-size:13px; }
+  .subtopic-header.open .chevron { transform:rotate(90deg); }
+  .subtopic-content {
+    max-height:0; overflow:hidden; transition:max-height .35s ease;
+    padding:0 16px; border-top:0 solid #2e2418;
+  }
+  .subtopic-content.open { max-height:600px; padding:14px 16px 16px; border-top:1px solid #2e2418; }
+  .subtopic-content p { font-size:13.5px; line-height:1.75; color:#c8b89a; font-weight:300; margin-bottom:10px; }
+  .subtopic-content .highlight {
+    background:rgba(201,168,76,.1); border-left:3px solid var(--gold);
+    padding:10px 14px; border-radius:4px; margin:10px 0;
+    font-size:13px; color:var(--cream);
+  }
+  .subtopic-content .highlight strong { color:var(--gold); }
+
+  .key-dates { margin-top:14px; }
+  .key-dates h5 { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:10px; }
+  .date-row { display:flex; gap:12px; margin-bottom:8px; align-items:flex-start; }
+  .date-row .yr { font-family:'Playfair Display',serif; font-size:14px; color:var(--gold2); min-width:46px; }
+  .date-row .ev { font-size:13px; color:#c8b89a; font-weight:300; line-height:1.5; }
+
+  /* ── QUIZ VIEW ── */
+  .quiz-header { padding:20px; }
+  .quiz-header .q-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .quiz-header .q-num { font-size:12px; color:var(--muted); }
+  .quiz-header .q-score { font-family:'Playfair Display',serif; font-size:15px; color:var(--gold); }
+  .progress-bar { height:4px; background:#2e2418; border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--red),var(--gold)); border-radius:2px; transition:width .4s ease; }
+
+  .question-box { margin:0 20px 20px; }
+  .question-box .topic-tag {
+    display:inline-block; font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--gold); background:rgba(201,168,76,.1); padding:4px 10px; border-radius:20px; margin-bottom:12px;
+  }
+  .question-box .q-text {
+    font-family:'Playfair Display',serif;
+    font-size:17px; line-height:1.55; color:var(--cream); margin-bottom:20px;
+  }
+
+  .options { display:flex; flex-direction:column; gap:10px; padding:0 20px; }
+  .option-btn {
+    background:var(--surface);
+    border:1.5px solid #2e2418;
+    border-radius:12px; padding:14px 16px;
+    cursor:pointer; text-align:left;
+    display:flex; gap:12px; align-items:center;
+    transition:all .15s;
+    color:var(--cream); font-size:14px; font-family:'Source Serif 4',serif;
+  }
+  .option-btn .opt-letter {
+    width:28px; height:28px; border-radius:50%;
+    background:var(--surface2); color:var(--muted);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:600; flex-shrink:0;
+    transition:all .15s;
+  }
+  .option-btn:hover:not(:disabled) { border-color:var(--gold); }
+  .option-btn:hover:not(:disabled) .opt-letter { background:rgba(201,168,76,.2); color:var(--gold); }
+  .option-btn.correct { border-color:var(--correct); background:rgba(46,125,91,.1); }
+  .option-btn.correct .opt-letter { background:var(--correct); color:#fff; }
+  .option-btn.wrong { border-color:var(--wrong); background:rgba(139,38,53,.1); }
+  .option-btn.wrong .opt-letter { background:var(--wrong); color:#fff; }
+  .option-btn:disabled { cursor:default; }
+
+  .explanation {
+    margin:16px 20px 0;
+    background:var(--surface2);
+    border-radius:12px; padding:14px 16px;
+    border-left:3px solid var(--gold);
+    animation:fadeIn .3s ease;
+  }
+  .explanation .ex-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
+  .explanation p { font-size:13px; color:#c8b89a; line-height:1.7; font-weight:300; }
+
+  .quiz-actions { padding:20px; display:flex; gap:10px; }
+  .btn-primary {
+    flex:1; padding:15px; border:none; border-radius:12px;
+    background:linear-gradient(135deg,#8b2635,#c9a84c);
+    color:#fff; font-size:15px; font-family:'Playfair Display',serif;
+    cursor:pointer; font-weight:700; letter-spacing:.5px;
+    transition:opacity .15s;
+  }
+  .btn-primary:active { opacity:.85; }
+  .btn-secondary {
+    padding:15px 20px; border:1.5px solid #2e2418; border-radius:12px;
+    background:transparent; color:var(--muted); font-size:14px;
+    cursor:pointer; font-family:'Source Serif 4',serif;
+    transition:border-color .15s;
+  }
+  .btn-secondary:hover { border-color:var(--muted); }
+
+  /* ── RESULT ── */
+  .result-view {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:40px 28px; text-align:center;
+  }
+  .result-circle {
+    width:130px; height:130px; border-radius:50%;
+    border:3px solid var(--gold);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    margin-bottom:28px;
+    background: radial-gradient(circle at 40% 35%, rgba(201,168,76,.15), transparent 70%);
+    position:relative;
+  }
+  .result-circle::before {
+    content:''; position:absolute; inset:-8px; border-radius:50%;
+    border:1px solid rgba(201,168,76,.2);
+  }
+  .result-circle .big { font-family:'Playfair Display',serif; font-size:42px; color:var(--gold); }
+  .result-circle .small { font-size:13px; color:var(--muted); margin-top:-4px; }
+  .result-view h2 { font-family:'Playfair Display',serif; font-size:26px; color:var(--cream); margin-bottom:10px; }
+  .result-view p { font-size:14px; color:var(--muted); font-weight:300; line-height:1.65; margin-bottom:32px; }
+  .result-tags { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:32px; }
+  .result-tags span { background:var(--surface); border:1px solid #2e2418; border-radius:20px; padding:6px 14px; font-size:12px; color:var(--muted); }
+  .result-tags span b { color:var(--gold); }
+
+  /* ── QUIZ LIST ── */
+  .quiz-set-card {
+    margin:0 16px 10px;
+    background:var(--surface);
+    border-radius:var(--radius);
+    border:1px solid #2e2418;
+    padding:16px; cursor:pointer;
+    transition:border-color .15s, transform .15s;
+    display:flex; align-items:center; gap:14px;
+  }
+  .quiz-set-card:active { transform:scale(.98); }
+  .quiz-set-card:hover { border-color:var(--gold); }
+  .quiz-set-card .qs-icon {
+    width:46px; height:46px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; flex-shrink:0;
+  }
+  .quiz-set-card .qs-body { flex:1; }
+  .quiz-set-card .qs-body h4 { font-family:'Playfair Display',serif; font-size:15px; color:var(--cream); margin-bottom:3px; }
+  .quiz-set-card .qs-body p { font-size:12px; color:var(--muted); font-weight:300; }
+  .quiz-set-card .qs-meta { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .quiz-set-card .qs-meta .cnt { font-family:'Playfair Display',serif; font-size:18px; color:var(--gold); }
+  .quiz-set-card .qs-meta .lbl { font-size:10px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="phone">
+
+<!-- ══════════════ HOME ══════════════ -->
+<div class="view active" id="v-home">
+  <div class="scroll">
+    <div class="home-header">
+      <div class="logo">KPSS · B Grubu</div>
+      <h2>Tarih<br><span>Hazırlık</span></h2>
+      <p>Konu anlatımı & soru bankası</p>
+    </div>
+    <div class="stat-strip">
+      <div class="stat"><div class="num">8</div><div class="lbl">Konu</div></div>
+      <div class="stat"><div class="num">45</div><div class="lbl">Soru</div></div>
+      <div class="stat"><div class="num">%0</div><div class="lbl">Başarı</div></div>
+    </div>
+
+    <div class="section-title">📚 Konu Anlatımları</div>
+
+    <div class="topic-card" onclick="openTopic('osmanli')">
+      <div class="accent" style="background:#c9a84c"></div>
+      <div class="body">
+        <h3>Osmanlı Devleti'nin Kuruluşu</h3>
+        <p>Anadolu Selçukluları · Beylikler · Ertuğrul Gazi</p>
+      </div>
+      <div class="meta">
+        <span class="tag">1299–1453</span>
+        <span class="arrow">›</span>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="openTopic('yükseliş')">
+      <div class="accent" style="background:#8b2635"></div>
+      <div class="body">
+        <h3>Osmanlı Yükseliş Dönemi</h3>
+        <p>Fatih · İstanbul'un Fethi · Genişleme politikası</p>
+      </div>
+      <div class="meta">
+        <span class="tag">1453–1566</span>
+        <span class="arrow">›</span>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="openTopic('tanzimat')">
+      <div class="accent" style="background:#4a7c6f"></div>
+      <div class="body">
+        <h3>Tanzimat ve Islahat Dönemi</h3>
+        <p>Gülhane Hattı · Islahat Fermanı · Meşrutiyet</p>
+      </div>
+      <div class="meta">
+        <span class="tag">1839–1876</span>
+        <span class="arrow">›</span>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="openTopic('kurtulus')">
+      <div class="accent" style="background:#6b4c9a"></div>
+      <div class="body">
+        <h3>Kurtuluş Savaşı</h3>
+        <p>Mondros · Müdafaa-i Hukuk · TBMM · Zaferler</p>
+      </div>
+      <div class="meta">
+        <span class="tag">1919–1923</span>
+        <span class="arrow">›</span>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="openTopic('cumhuriyet')">
+      <div class="accent" style="background:#c9a84c"></div>
+      <div class="body">
+        <h3>Cumhuriyet Dönemi İnkılapları</h3>
+        <p>Atatürk İlkeleri · Devrimler · Çok Partili Hayat</p>
+      </div>
+      <div class="meta">
+        <span class="tag">1923–1950</span>
+        <span class="arrow">›</span>
+      </div>
+    </div>
+
+    <div style="height:90px"></div>
+  </div>
+
+  <div class="bottomnav">
+    <button class="active" onclick="switchTab('home')"><span class="icon">🏛</span><span class="lbl">Ana Sayfa</span></button>
+    <button onclick="switchTab('quiz-list')"><span class="icon">📝</span><span class="lbl">Soru Çöz</span></button>
+    <button onclick="switchTab('stats')"><span class="icon">📊</span><span class="lbl">İstatistik</span></button>
+  </div>
+</div>
+
+<!-- ══════════════ TOPIC DETAIL ══════════════ -->
+<div class="view" id="v-topic">
+  <div class="topbar">
+    <button class="back" onclick="goBack('v-home')">‹</button>
+    <h1 id="topic-title">Konu</h1>
+  </div>
+  <div class="scroll">
+    <div class="content-body" id="topic-content"></div>
+    <div style="height:30px"></div>
+  </div>
+</div>
+
+<!-- ══════════════ QUIZ LIST ══════════════ -->
+<div class="view" id="v-quiz-list">
+  <div class="topbar">
+    <button class="back" onclick="goBack('v-home')">‹</button>
+    <h1>Soru Setleri</h1>
+  </div>
+  <div class="scroll">
+    <div class="section-title">🎯 Konu Bazlı Testler</div>
+
+    <div class="quiz-set-card" onclick="startQuiz('osmanli')">
+      <div class="qs-icon" style="background:rgba(201,168,76,.15)">⚔️</div>
+      <div class="qs-body">
+        <h4>Osmanlı Kuruluş Dönemi</h4>
+        <p>Kuruluş · Beylikler · İlk padişahlar</p>
+      </div>
+      <div class="qs-meta"><div class="cnt">9</div><div class="lbl">soru</div></div>
+    </div>
+
+    <div class="quiz-set-card" onclick="startQuiz('tanzimat')">
+      <div class="qs-icon" style="background:rgba(74,124,111,.15)">📜</div>
+      <div class="qs-body">
+        <h4>Tanzimat ve Islahat</h4>
+        <p>Fermanlar · Meşrutiyet · Kanun-i Esasi</p>
+      </div>
+      <div class="qs-meta"><div class="cnt">9</div><div class="lbl">soru</div></div>
+    </div>
+
+    <div class="quiz-set-card" onclick="startQuiz('kurtulus')">
+      <div class="qs-icon" style="background:rgba(107,76,154,.15)">🏆</div>
+      <div class="qs-body">
+        <h4>Kurtuluş Savaşı</h4>
+        <p>Mondros · Kongre · TBMM · Zaferler</p>
+      </div>
+      <div class="qs-meta"><div class="cnt">9</div><div class="lbl">soru</div></div>
+    </div>
+
+    <div class="quiz-set-card" onclick="startQuiz('cumhuriyet')">
+      <div class="qs-icon" style="background:rgba(139,38,53,.15)">🇹🇷</div>
+      <div class="qs-body">
+        <h4>Cumhuriyet ve İnkılaplar</h4>
+        <p>Atatürk ilkeleri · Devrimler · Harf İnkılabı</p>
+      </div>
+      <div class="qs-meta"><div class="cnt">9</div><div class="lbl">soru</div></div>
+    </div>
+
+    <div class="section-title" style="margin-top:10px">🔥 Karma Test</div>
+    <div class="quiz-set-card" onclick="startQuiz('karma')">
+      <div class="qs-icon" style="background:rgba(201,168,76,.15)">🎲</div>
+      <div class="qs-body">
+        <h4>Karışık Sorular</h4>
+        <p>Tüm konulardan karma KPSS soruları</p>
+      </div>
+      <div class="qs-meta"><div class="cnt">9</div><div class="lbl">soru</div></div>
+    </div>
+
+    <div style="height:30px"></div>
+  </div>
+
+  <div class="bottomnav">
+    <button onclick="switchTab('home')"><span class="icon">🏛</span><span class="lbl">Ana Sayfa</span></button>
+    <button class="active" onclick="switchTab('quiz-list')"><span class="icon">📝</span><span class="lbl">Soru Çöz</span></button>
+    <button onclick="switchTab('stats')"><span class="icon">📊</span><span class="lbl">İstatistik</span></button>
+  </div>
+</div>
+
+<!-- ══════════════ QUIZ ══════════════ -->
+<div class="view" id="v-quiz">
+  <div class="topbar">
+    <button class="back" onclick="goBack('v-quiz-list')">‹</button>
+    <h1 id="quiz-title">Test</h1>
+    <span class="badge" id="quiz-badge">9 Soru</span>
+  </div>
+  <div class="scroll" id="quiz-scroll">
+    <div class="quiz-header">
+      <div class="q-meta">
+        <span class="q-num" id="q-num">Soru 1 / 9</span>
+        <span class="q-score" id="q-score">✓ 0 &nbsp; ✗ 0</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="q-progress" style="width:11%"></div></div>
+    </div>
+
+    <div class="question-box">
+      <span class="topic-tag" id="q-tag">Konu</span>
+      <p class="q-text" id="q-text">Soru yükleniyor...</p>
+    </div>
+
+    <div class="options" id="q-options"></div>
+    <div id="q-explanation" style="display:none" class="explanation">
+      <div class="ex-title">📖 Açıklama</div>
+      <p id="q-exp-text"></p>
+    </div>
+
+    <div class="quiz-actions">
+      <button class="btn-secondary" id="btn-skip" onclick="nextQuestion()">Geç</button>
+      <button class="btn-primary" id="btn-next" onclick="nextQuestion()" style="display:none">Sonraki Soru →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ RESULT ══════════════ -->
+<div class="view" id="v-result">
+  <div class="topbar">
+    <button class="back" onclick="goBack('v-quiz-list')">‹</button>
+    <h1>Sonuç</h1>
+  </div>
+  <div class="result-view">
+    <div class="result-circle">
+      <div class="big" id="r-score">0/9</div>
+      <div class="small" id="r-pct">%0</div>
+    </div>
+    <h2 id="r-title">Tebrikler!</h2>
+    <p id="r-msg">Değerlendirmeniz tamamlandı.</p>
+    <div class="result-tags">
+      <span>Doğru: <b id="r-correct">0</b></span>
+      <span>Yanlış: <b id="r-wrong">0</b></span>
+      <span>Boş: <b id="r-empty">0</b></span>
+    </div>
+    <button class="btn-primary" style="width:100%" onclick="goBack('v-quiz-list')">Tekrar Test Seç</button>
+  </div>
+</div>
+
+<!-- ══════════════ STATS ══════════════ -->
+<div class="view" id="v-stats">
+  <div class="topbar">
+    <h1>İstatistiklerim</h1>
+  </div>
+  <div class="scroll" style="padding:20px">
+    <div style="text-align:center;padding:60px 20px;color:var(--muted)">
+      <div style="font-size:48px;margin-bottom:16px">📊</div>
+      <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--cream);margin-bottom:10px">Henüz İstatistik Yok</div>
+      <p style="font-size:13px;font-weight:300;line-height:1.65">Test çözdükçe başarı grafiğin burada görünecek.</p>
+    </div>
+  </div>
+  <div class="bottomnav">
+    <button onclick="switchTab('home')"><span class="icon">🏛</span><span class="lbl">Ana Sayfa</span></button>
+    <button onclick="switchTab('quiz-list')"><span class="icon">📝</span><span class="lbl">Soru Çöz</span></button>
+    <button class="active" onclick="switchTab('stats')"><span class="icon">📊</span><span class="lbl">İstatistik</span></button>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────
+const topics = {
+  osmanli: {
+    title: "Osmanlı'nın Kuruluşu",
+    period: "1299 – 1453",
+    sections: [
+      {
+        title: "Kuruluş Öncesi: Anadolu Selçukluları",
+        content: `<p>Osmanlı Devleti'nin kurulduğu Anadolu coğrafyasında, XIII. yüzyılda <strong>Anadolu Selçuklu Devleti</strong> hâkimdi. 1243'teki Kösedağ Savaşı'nda Moğollara yenilen Selçuklular, ülkeyi yönetme güçlerini yitirdi ve Anadolu beylikler dönemine girdi.</p>
+        <div class="highlight"><strong>Önemli:</strong> Kösedağ Savaşı (1243) Osmanlı'nın kuruluş zeminini hazırlayan en kritik dönüm noktasıdır.</div>`,
+        dates: [
+          { year:"1071", event:"Malazgirt Meydan Muharebesi — Türklerin Anadolu'ya yerleşmesi" },
+          { year:"1243", event:"Kösedağ Savaşı — Selçuklular Moğollara yenildi" },
+          { year:"1299", event:"Osmanlı Devleti'nin kuruluşu (Osman Bey)" },
+        ]
+      },
+      {
+        title: "Osman Gazi ve Kuruluş",
+        content: `<p><strong>Osman Bey</strong> (1281–1326), Söğüt ve Domaniç yöresinde hâkimiyet kurarak beyliği devlete dönüştürdü. Kayı boyu kökenli olan Osman Bey, Bizans sınırındaki gazalarla topraklarını genişletti.</p>
+        <div class="highlight"><strong>Bilinmesi Gereken:</strong> Osmanlı'nın ilk başkenti Söğüt'tür. Bursa 1326'da Orhan Bey tarafından fethedilerek başkent yapıldı.</div>`,
+        dates: [
+          { year:"1302", event:"Bapheus Muharebesi — Osmanlı'nın Bizans'a karşı ilk zaferi" },
+          { year:"1326", event:"Bursa'nın fethi ve başkent oluşu" },
+          { year:"1354", event:"Rumeli'ye geçiş (Çimpe Kalesi)" },
+        ]
+      },
+      {
+        title: "İlk Osmanlı Kurumları",
+        content: `<p>Osmanlı, beylikten devlete geçiş sürecinde çeşitli kurumları oluşturdu. <strong>Divan-ı Hümayun</strong> (devlet meclisi), <strong>tımar sistemi</strong> (arazi-askerlik düzeni) ve <strong>yeniçeri ocağı</strong> bu dönemin temel kurumlarıdır.</p>`,
+        dates: [
+          { year:"1360", event:"Edirne'nin fethi ve ikinci başkent oluşu" },
+          { year:"1389", event:"I. Kosova Savaşı — Balkan hâkimiyetinin pekişmesi" },
+          { year:"1402", event:"Ankara Savaşı — Timur karşısında yenilgi (fetret dönemi)" },
+        ]
+      }
+    ]
+  },
+  yükseliş: {
+    title: "Osmanlı Yükseliş Dönemi",
+    period: "1453 – 1566",
+    sections: [
+      {
+        title: "İstanbul'un Fethi (1453)",
+        content: `<p><strong>II. Mehmed (Fatih Sultan Mehmed)</strong>, 29 Mayıs 1453'te İstanbul'u fethederek Osmanlı'yı bir cihan devleti hâline getirdi. Bu fetih, Orta Çağ'ı bitirip Yeni Çağ'ı başlattığı kabul edilir.</p>
+        <div class="highlight"><strong>KPSS Sık Sorulan:</strong> Fetihte topların ilk kez büyük ölçüde kullanılması, Türklerin surları aşmak için gemileri karadan Haliç'e indirmesi öne çıkan stratejik unsurlardır.</div>`,
+        dates: [
+          { year:"1453", event:"İstanbul'un Fethi (29 Mayıs)" },
+          { year:"1461", event:"Trabzon Rum İmparatorluğu'na son verildi" },
+          { year:"1475", event:"Kırım Hanlığı Osmanlı'ya bağlandı" },
+        ]
+      },
+      {
+        title: "Kanuni Sultan Süleyman Dönemi",
+        content: `<p>Osmanlı'nın en geniş sınırlara ulaştığı dönem Kanuni'nin saltanatıdır (1520–1566). Avrupa'da Habsburg İmparatorluğu ile, doğuda Safevilerle mücadele edildi.</p>
+        <div class="highlight"><strong>Önemli Anlaşmalar:</strong> 1535 tarihli Fransız kapitülasyonları, Osmanlı'nın Avrupa dengesindeki yerini gösteren kritik bir belgedir.</div>`,
+        dates: [
+          { year:"1521", event:"Belgrad'ın fethi" },
+          { year:"1526", event:"Mohaç Muharebesi — Macaristan kapıları açıldı" },
+          { year:"1529", event:"I. Viyana Kuşatması" },
+          { year:"1538", event:"Preveze Deniz Muharebesi — Akdeniz hâkimiyeti" },
+        ]
+      }
+    ]
+  },
+  tanzimat: {
+    title: "Tanzimat ve Islahat Dönemi",
+    period: "1839 – 1876",
+    sections: [
+      {
+        title: "Tanzimat Fermanı (Gülhane Hattı, 1839)",
+        content: `<p><strong>Mustafa Reşit Paşa</strong>'nın öncülüğünde ilan edilen Tanzimat Fermanı, Osmanlı tarihinde anayasal düzene geçişin ilk adımıdır. Can, mal ve namus güvencesi, askerlik ve vergi düzeni bu fermanda güvence altına alınmıştır.</p>
+        <div class="highlight"><strong>KPSS Odak Noktası:</strong> Tanzimat, tüm Osmanlı tebaasına din ayrımı gözetmeksizin eşit haklar tanıyan ilk belgedir. Milliyetçi hareketleri bastırmak amacıyla ilan edilmiştir.</div>`,
+        dates: [
+          { year:"1839", event:"Gülhane Hattı-ı Hümayunu (Tanzimat Fermanı)" },
+          { year:"1856", event:"Islahat Fermanı — azınlıklara genişletilmiş haklar" },
+          { year:"1861", event:"Meclis-i Ahkâm-ı Adliyye kuruldu" },
+        ]
+      },
+      {
+        title: "I. Meşrutiyet (1876) ve Kanun-i Esasi",
+        content: `<p><strong>Mithat Paşa</strong>'nın öncülüğünde hazırlanan <strong>Kanun-i Esasi</strong>, Osmanlı'nın ilk anayasasıdır (23 Aralık 1876). Meclis-i Mebusan ve Meclis-i Ayan oluşturuldu. Ancak II. Abdülhamid 1878'de Meclis'i tatil etti ve I. Meşrutiyet sona erdi.</p>`,
+        dates: [
+          { year:"1876", event:"I. Meşrutiyet ve Kanun-i Esasi'nin ilanı" },
+          { year:"1877-78", event:"Osmanlı-Rus Savaşı (93 Harbi)" },
+          { year:"1878", event:"Meclisin tatili — Kanun-i Esasi'nin askıya alınması" },
+        ]
+      }
+    ]
+  },
+  kurtulus: {
+    title: "Kurtuluş Savaşı",
+    period: "1919 – 1923",
+    sections: [
+      {
+        title: "Mondros Mütarekesi ve İşgaller",
+        content: `<p>30 Ekim 1918'de imzalanan <strong>Mondros Mütarekesi</strong>, Osmanlı'nın fiilen teslimiyetidir. İtilaf Devletleri Anadolu'yu işgale başladı: İngilizler Musul, Fransızlar Hatay, İtalyanlar Antalya, Yunanlılar İzmir'e asker çıkardı (15 Mayıs 1919).</p>
+        <div class="highlight"><strong>KPSS Sık Sorulan:</strong> İzmir'in işgali Kurtuluş Savaşı'nın fitilini ateşleyen en önemli gelişmedir. Mustafa Kemal 19 Mayıs 1919'da Samsun'a çıktı.</div>`,
+        dates: [
+          { year:"30 Ekim 1918", event:"Mondros Mütarekesi imzalandı" },
+          { year:"15 Mayıs 1919", event:"Yunanlıların İzmir'i işgali" },
+          { year:"19 Mayıs 1919", event:"Mustafa Kemal'in Samsun'a çıkması" },
+        ]
+      },
+      {
+        title: "Kongreler ve TBMM'nin Kuruluşu",
+        content: `<p>Mustafa Kemal, halkı örgütlemek için Erzurum (Temmuz 1919) ve Sivas (Eylül 1919) kongrelerini topladı. <strong>Misak-ı Millî</strong> 28 Ocak 1920'de kabul edildi. 23 Nisan 1920'de <strong>TBMM</strong> açılarak milli egemenlik ilan edildi.</p>
+        <div class="highlight"><strong>Önemli:</strong> TBMM hem yasama hem yürütme hem de yargı yetkisini bünyesinde toplamıştır — kuvvetler birliği ilkesi.</div>`,
+        dates: [
+          { year:"Temmuz 1919", event:"Erzurum Kongresi" },
+          { year:"Eylül 1919", event:"Sivas Kongresi" },
+          { year:"28 Ocak 1920", event:"Misak-ı Millî kararları" },
+          { year:"23 Nisan 1920", event:"TBMM'nin açılması" },
+        ]
+      },
+      {
+        title: "Savaşlar ve Lozan",
+        content: `<p>İnönü (1. ve 2.), Sakarya ve <strong>Büyük Taarruz</strong> (Ağustos 1922) zaferleriyle Yunan ordusu Anadolu'dan çıkarıldı. 11 Ekim 1922'de <strong>Mudanya Mütarekesi</strong> imzalandı. 24 Temmuz 1923'te <strong>Lozan Antlaşması</strong> ile Türkiye'nin bağımsızlığı uluslararası alanda tanındı.</p>`,
+        dates: [
+          { year:"Ağustos 1922", event:"Büyük Taarruz ve Başkomutanlık Meydan Muharebesi" },
+          { year:"11 Ekim 1922", event:"Mudanya Mütarekesi" },
+          { year:"24 Temmuz 1923", event:"Lozan Barış Antlaşması" },
+          { year:"29 Ekim 1923", event:"Cumhuriyetin İlanı" },
+        ]
+      }
+    ]
+  },
+  cumhuriyet: {
+    title: "Cumhuriyet ve İnkılaplar",
+    period: "1923 – 1950",
+    sections: [
+      {
+        title: "Siyasi İnkılaplar",
+        content: `<p>Cumhuriyetin ilanı (29 Ekim 1923) ardından saltanat (1 Kasım 1922) ve halifelik (3 Mart 1924) kaldırıldı. <strong>1924 Anayasası</strong> kabul edilerek tek parti dönemi başladı.</p>
+        <div class="highlight"><strong>Sıralama:</strong> Saltanatın kaldırılması (1922) → Cumhuriyetin ilanı (1923) → Halifeliğin kaldırılması (1924)</div>`,
+        dates: [
+          { year:"1 Kasım 1922", event:"Saltanatın kaldırılması" },
+          { year:"29 Ekim 1923", event:"Cumhuriyetin ilanı" },
+          { year:"3 Mart 1924", event:"Halifeliğin kaldırılması, Tevhid-i Tedrisat Kanunu" },
+        ]
+      },
+      {
+        title: "Hukuk ve Sosyal İnkılaplar",
+        content: `<p>Medeni Kanun (1926) ile İsviçre hukuku örnek alınarak aile hukuku, miras ve mülkiyet hakları yeniden düzenlendi. Kadınlara seçme ve seçilme hakkı 1934'te tanındı.</p>
+        <div class="highlight"><strong>KPSS Sık Sorulan:</strong> Türk Medeni Kanunu, Osmanlı şer'iye mahkemelerini kaldırarak laik hukuk düzenine geçişi sağladı.</div>`,
+        dates: [
+          { year:"1925", event:"Tekke ve zaviyelerin kapatılması, şapka inkılabı" },
+          { year:"1926", event:"Türk Medeni Kanunu ve Türk Ceza Kanunu" },
+          { year:"1928", event:"Harf İnkılabı — Latin alfabesine geçiş" },
+          { year:"1934", event:"Kadınlara milletvekili seçme ve seçilme hakkı" },
+        ]
+      },
+      {
+        title: "Atatürk'ün Altı İlkesi",
+        content: `<p>Cumhuriyetçilik, Milliyetçilik, Halkçılık, Devletçilik, Laiklik ve Devrimcilik (İnkılapçılık) — Bu altı ilke 1937'de anayasaya girerek <strong>Kemalizm</strong>'in temelini oluşturdu.</p>
+        <div class="highlight"><strong>Ezber Kolaylığı:</strong> CuMHuDeLDe — Cumhuriyetçilik, Milliyetçilik, Halkçılık, Devletçilik, Laiklik, Devrimcilik</div>`,
+        dates: [
+          { year:"1930", event:"Serbest Cumhuriyet Fırkası kuruldu ve kapatıldı" },
+          { year:"1931", event:"Türk Tarihi Tetkik Cemiyeti (TTK) kuruldu" },
+          { year:"1932", event:"Halkevleri açıldı" },
+          { year:"1937", event:"6 İlke Anayasaya girdi" },
+        ]
+      }
+    ]
+  }
+};
+
+// ─── QUESTIONS ────────────────────────────────────────────────────────────
+const questionBank = {
+  osmanli: [
+    { tag:"Kuruluş", q:"Anadolu Selçuklu Devleti'nin Moğollara yenilerek fiilen çöküşe geçtiği savaş hangisidir?", opts:["Pasinler Savaşı","Kösedağ Savaşı","Malazgirt Savaşı","Miryakefalon Savaşı"], ans:1, exp:"1243 Kösedağ Savaşı'nda Moğollara yenilen Anadolu Selçukluları merkezi otoritesini kaybetti; bu durum Osmanlı'nın kuruluş zeminini hazırladı." },
+    { tag:"Kuruluş", q:"Osmanlı Devleti'nin kurucusu kimdir ve hangi boydan gelmektedir?", opts:["Ertugrul Gazi — Kınık boyu","Osman Gazi — Kayı boyu","Orhan Gazi — Avşar boyu","Alp Arslan — Kayı boyu"], ans:1, exp:"Osmanlı Devleti'nin kurucusu Osman Gazi, Oğuzların Bozok koluna bağlı Kayı boyundandır." },
+    { tag:"Kuruluş", q:"Osmanlı'nın Bizans'a karşı kazandığı ve devlet olma yolundaki ilk büyük zafer hangisidir?", opts:["Varna Muharebesi","Bapheus (Koyunhisar) Muharebesi","Mohaç Muharebesi","Niğbolu Muharebesi"], ans:1, exp:"1302 Bapheus Muharebesi, Osmanlı'nın Bizans ile yaptığı ve kesin zafer kazandığı ilk büyük savaştır." },
+    { tag:"Kuruluş", q:"Osmanlı'nın Rumeli'ye geçişini sağlayan ilk adım nedir?", opts:["Edirne'nin fethi","Çimpe Kalesi'nin ele geçirilmesi","Selanik'in fethi","Sofya'nın fethi"], ans:1, exp:"1354'te Rumeli'ye geçiş Çimpe Kalesi'nin alınmasıyla gerçekleşti; bu, Balkanlardaki Osmanlı hâkimiyetinin başlangıcıdır." },
+    { tag:"Kuruluş", q:"Osmanlı'nın ilk başkenti aşağıdakilerden hangisidir?", opts:["Bursa","Edirne","Söğüt","İznik"], ans:2, exp:"Osman Bey döneminde Söğüt, Osmanlı'nın idare merkezi ve ilk başkentidir. Bursa 1326'da Orhan Bey tarafından başkent yapıldı." },
+    { tag:"Kuruluş", q:"Anadolu'da 'fetret devri' (interregnum) dönemi hangi olayla başlamıştır?", opts:["Varna Muharebesi","Kosova Muharebesi","Ankara Savaşı","Kösedağ Savaşı"], ans:2, exp:"1402 Ankara Savaşı'nda Timur'a yenilen Yıldırım Bayezid'in esir düşmesiyle başlayan fetret devri, dört şehzadenin taht mücadelesini kapsar." },
+    { tag:"Kuruluş", q:"Osmanlı'da ilk düzenli ordu birliği olarak kurulan teşkilat aşağıdakilerden hangisidir?", opts:["Kapıkulu Süvarileri","Yeniçeri Ocağı","Tımarlı Sipahiler","Acemi Ocağı"], ans:1, exp:"Yeniçeri Ocağı, devşirme sistemiyle toplanan ve doğrudan padişaha bağlı ilk düzenli piyade birliğidir." },
+    { tag:"Kuruluş", q:"I. Murat döneminde gerçekleşen ve Osmanlı'nın Balkan hâkimiyetini pekiştiren savaş hangisidir?", opts:["I. Kosova Savaşı","Niğbolu Savaşı","Sırpsındığı Savaşı","Varna Savaşı"], ans:0, exp:"1389 I. Kosova Muharebesi, Osmanlı'nın Balkanlar üzerindeki egemenliğini kesinleştirmiş; I. Murat bu savaşta hayatını kaybetmiştir." },
+    { tag:"Kuruluş", q:"Aşağıdakilerden hangisi Osmanlı'nın tımar sisteminin temel amacıdır?", opts:["Ticaretin geliştirilmesi","Asker yetiştirilmesi ve arazi gelirinin yönetimi","Medrese eğitiminin finansmanı","Şehirlerin imar edilmesi"], ans:1, exp:"Tımar sistemi; devlet arazisinin askeri hizmet karşılığında sipahilere verilmesini esas alır. Böylece hem hazineden masraf azalır hem de hazır asker yetiştirilir." },
+  ],
+  tanzimat: [
+    { tag:"Tanzimat", q:"Gülhane Hattı'nı (Tanzimat Fermanı) ilan eden devlet adamı kimdir?", opts:["Ali Paşa","Fuad Paşa","Mustafa Reşit Paşa","Mithat Paşa"], ans:2, exp:"Tanzimat Fermanı, Hariciye Nazırı Mustafa Reşit Paşa öncülüğünde 3 Kasım 1839'da ilan edilmiştir." },
+    { tag:"Tanzimat", q:"Tanzimat Fermanı'nın ilan edilmesinde en temel siyasi amaç nedir?", opts:["Ekonomiyi güçlendirmek","Milliyetçi hareketleri bastırıp Batılı devletlerin desteğini almak","Yeniçeri ocağını yeniden kurmak","Halifelik kurumunu güçlendirmek"], ans:1, exp:"Tanzimat, azınlıklara eşit haklar tanıyarak Balkan milliyetçiliğini frenlemek ve Batılı devletlerin Osmanlı'ya olan desteğini pekiştirmek amacıyla ilan edildi." },
+    { tag:"Islahat", q:"Islahat Fermanı hangi yılda ilan edilmiştir?", opts:["1839","1856","1876","1908"], ans:1, exp:"Islahat Fermanı, Kırım Savaşı'nın ardından 1856 Paris Antlaşması sürecinde ilan edilmiştir." },
+    { tag:"Meşrutiyet", q:"Osmanlı'nın ilk anayasası (Kanun-i Esasi) hangi yılda kabul edilmiştir?", opts:["1839","1856","1876","1878"], ans:2, exp:"Osmanlı'nın ilk anayasası olan Kanun-i Esasi 23 Aralık 1876'da ilan edilmiş, I. Meşrutiyet dönemi böylece başlamıştır." },
+    { tag:"Meşrutiyet", q:"Kanun-i Esasi'nin hazırlanmasında en etkin rol alan devlet adamı kimdir?", opts:["Mustafa Reşit Paşa","Ali Paşa","Mithat Paşa","Namık Kemal"], ans:2, exp:"Mithat Paşa, I. Meşrutiyet'in ve Kanun-i Esasi'nin baş mimarıdır." },
+    { tag:"Tanzimat", q:"Tanzimat Fermanı ile aşağıdakilerden hangisi güvence altına alınmamıştır?", opts:["Can güvenliği","Mal güvenliği","Parlamenter yönetim hakkı","Namus güvenliği"], ans:2, exp:"Tanzimat Fermanı can, mal ve namus güvenliğini sağlamış; ancak parlamenter yönetim düzenlemesi yalnızca 1876 Kanun-i Esasi ile gelmiştir." },
+    { tag:"Islahat", q:"I. Meşrutiyet dönemini fiilen sona erdiren olay nedir?", opts:["Tanzimat'ın ilanı","Osmanlı-Rus Savaşı (93 Harbi) ve II. Abdülhamid'in Meclis'i tatil etmesi","Mithat Paşa'nın idam edilmesi","Genç Osmanlıların sürgüne gönderilmesi"], ans:1, exp:"1877–78 Osmanlı-Rus Savaşı'nı gerekçe gösteren II. Abdülhamid, Meclis-i Mebusan'ı 1878'de tatil ederek I. Meşrutiyet'i fiilen sona erdirdi." },
+    { tag:"Tanzimat", q:"Aşağıdakilerden hangisi Tanzimat dönemi aydınları arasında yer almaz?", opts:["Namık Kemal","Ziya Paşa","Şinasi","Mustafa Reşit Paşa"], ans:3, exp:"Mustafa Reşit Paşa bir devlet adamıdır; Tanzimat edebiyatının aydın isimleri ise Namık Kemal, Ziya Paşa ve Şinasi'dir." },
+    { tag:"Meşrutiyet", q:"II. Meşrutiyet hangi olayla ilan edilmiştir?", opts:["Balkan Savaşları","İttihat ve Terakki Cemiyeti'nin baskısıyla 1908 devrimi","I. Dünya Savaşı'nın başlaması","Trablusgarp Savaşı"], ans:1, exp:"İttihat ve Terakki Cemiyeti'nin baskısı sonucunda II. Abdülhamid 23 Temmuz 1908'de II. Meşrutiyet'i ilan etmek zorunda kaldı." },
+  ],
+  kurtulus: [
+    { tag:"Mondros", q:"Mondros Mütarekesi hangi tarihte imzalanmıştır?", opts:["28 Ocak 1920","30 Ekim 1918","29 Ekim 1923","24 Temmuz 1923"], ans:1, exp:"Mondros Ateşkes Antlaşması, I. Dünya Savaşı'nın Osmanlı cephesini bitiren belge olup 30 Ekim 1918'de imzalandı." },
+    { tag:"İşgaller", q:"Mustafa Kemal hangi görevle Samsun'a çıkmıştır?", opts:["Genel Vali","9. Ordu Müfettişi","Başkomutan","Sadrazam"], ans:1, exp:"Mustafa Kemal, 9. Ordu Müfettişi sıfatıyla bölgedeki Rum-Türk çatışmalarını incelemek ve direniş örgütlerini dağıtmak amacıyla gönderildi; ancak ulusal hareketi örgütledi." },
+    { tag:"Kongreler", q:"Erzurum ve Sivas kongrelerinin ortak amacı aşağıdakilerden hangisidir?", opts:["Osmanlı Hanedanı'nı desteklemek","Millî iradeyi örgütleyerek işgallere karşı direniş oluşturmak","Mondros Mütarekesi'ni kabul etmek","Yunanistan ile barış görüşmeleri yapmak"], ans:1, exp:"Her iki kongre de Anadolu halkını örgütleyerek millî iradeyi temsil eden karar organları oluşturma amacı taşıyordu." },
+    { tag:"Misak-ı Millî", q:"Misak-ı Millî hangi kurum tarafından ve ne zaman kabul edilmiştir?", opts:["TBMM — 23 Nisan 1920","Son Osmanlı Mebusan Meclisi — 28 Ocak 1920","Sivas Kongresi — Eylül 1919","Erzurum Kongresi — Temmuz 1919"], ans:1, exp:"Misak-ı Millî, son Osmanlı Mebusan Meclisi tarafından 28 Ocak 1920'de kabul edilerek Türkiye'nin ulusal sınırları ilan edildi." },
+    { tag:"TBMM", q:"TBMM'nin açılış tarihi ve yeri aşağıdakilerden hangisidir?", opts:["19 Mayıs 1919 — Samsun","23 Nisan 1920 — Ankara","29 Ekim 1923 — Ankara","24 Temmuz 1923 — Lozan"], ans:1, exp:"TBMM, 23 Nisan 1920'de Ankara'da açılmıştır. Bu tarih bugün Ulusal Egemenlik ve Çocuk Bayramı olarak kutlanmaktadır." },
+    { tag:"Savaşlar", q:"Kurtuluş Savaşı'nda kesin zaferin kazanıldığı taarruz aşağıdakilerden hangisidir?", opts:["I. İnönü","II. İnönü","Sakarya Meydan Muharebesi","Büyük Taarruz"], ans:3, exp:"26 Ağustos 1922'de başlayan Büyük Taarruz, 30 Ağustos'taki Başkomutanlık Meydan Muharebesi ile Yunan ordusunu kesin yenilgiye uğrattı." },
+    { tag:"Mudanya", q:"Mudanya Mütarekesi hangi taraflar arasında imzalanmıştır?", opts:["Türkiye-Yunanistan","TBMM-İtilaf Devletleri","Osmanlı-Müttefik Devletler","Türkiye-Sovyetler Birliği"], ans:1, exp:"11 Ekim 1922'de imzalanan Mudanya Mütarekesi, TBMM Hükümeti ile İtilaf Devletleri arasında yapılmış; Yunanistan ateşkesi kabul etmiştir." },
+    { tag:"Lozan", q:"Lozan Antlaşması'nın önemi nedir?", opts:["Osmanlı'nın egemenliğini kabul ettirmesi","Türkiye Cumhuriyeti'nin bağımsızlığını uluslararası alanda tanıtması","Kapitülasyonların yeniden düzenlenmesi","Osmanlı borçlarının tamamen silinmesi"], ans:1, exp:"24 Temmuz 1923'te imzalanan Lozan Antlaşması, Türkiye Cumhuriyeti'nin uluslararası platformda tam anlamıyla tanındığı belgedir." },
+    { tag:"Kurtuluş", q:"Kurtuluş Savaşı'nı fiilen başlatan olay aşağıdakilerden hangisidir?", opts:["Mustafa Kemal'in Samsun'a çıkması","Mondros Mütarekesi","İzmir'in Yunan kuvvetlerince işgali","Sivas Kongresi'nin toplanması"], ans:2, exp:"15 Mayıs 1919'da Yunan kuvvetlerinin İzmir'i işgal etmesi, Anadolu halkında ulusal direniş ruhunu ateşledi ve Kurtuluş Savaşı'nı fiilen başlattı." },
+  ],
+  cumhuriyet: [
+    { tag:"Cumhuriyet", q:"Türkiye Cumhuriyeti hangi tarihte ilan edilmiştir?", opts:["24 Temmuz 1923","29 Ekim 1923","1 Kasım 1922","3 Mart 1924"], ans:1, exp:"Türkiye Cumhuriyeti, 29 Ekim 1923'te TBMM'nin aldığı kararla ilan edilmiş; Mustafa Kemal ilk cumhurbaşkanı seçilmiştir." },
+    { tag:"İnkılaplar", q:"Saltanat ve halifelik hangi sırayla kaldırılmıştır?", opts:["Önce halifelik sonra saltanat","Önce saltanat sonra halifelik","İkisi aynı anda kaldırıldı","Saltanat hiç kaldırılmadı"], ans:1, exp:"Saltanat 1 Kasım 1922'de, halifelik ise 3 Mart 1924'te kaldırılmıştır." },
+    { tag:"İnkılaplar", q:"Harf İnkılabı hangi yılda gerçekleşmiş ve Latin alfabesi hangi tarihe kadar uygulanmaya başlanmıştır?", opts:["1926 — 1928","1928 — 1 Ocak 1929","1930 — 1 Kasım 1930","1932 — 1933"], ans:1, exp:"Harf İnkılabı 1 Kasım 1928'de kabul edildi; uygulamaya geçiş 1929 yılı başında tamamlandı." },
+    { tag:"Atatürk İlkeleri", q:"Atatürk'ün altı ilkesi 1937'de hangi belgeye girmiştir?", opts:["Lozan Antlaşması","Türkiye Cumhuriyeti Anayasası","Misak-ı Millî","Medeni Kanun"], ans:1, exp:"Cumhuriyetçilik, Milliyetçilik, Halkçılık, Devletçilik, Laiklik ve Devrimcilik ilkeleri 1937'de anayasaya eklendi." },
+    { tag:"İnkılaplar", q:"Medeni Kanun hangi ülkenin kanunundan uyarlanmıştır?", opts:["Fransa","İtalya","İsviçre","Almanya"], ans:2, exp:"1926'da kabul edilen Türk Medeni Kanunu, büyük ölçüde İsviçre Medeni Kanunu esas alınarak hazırlanmıştır." },
+    { tag:"Kadın Hakları", q:"Kadınlara milletvekili seçme ve seçilme hakkı hangi yılda tanınmıştır?", opts:["1923","1926","1930","1934"], ans:3, exp:"Türkiye'de kadınlara belediye seçimlerinde oy hakkı 1930'da, milletvekili seçme ve seçilme hakkı ise 1934'te tanındı." },
+    { tag:"İlkeler", q:"Aşağıdakilerden hangisi Atatürk'ün altı ilkesinden biri değildir?", opts:["Halkçılık","Devletçilik","Milliyetçilik","Federalizm"], ans:3, exp:"Federalizm Atatürk'ün ilkeleri arasında yer almaz. Altı ilke: Cumhuriyetçilik, Milliyetçilik, Halkçılık, Devletçilik, Laiklik, Devrimcilik." },
+    { tag:"İnkılaplar", q:"Tevhid-i Tedrisat Kanunu ile amaçlanan temel değişiklik nedir?", opts:["Medrese eğitimini yaygınlaştırmak","Tüm eğitim kurumlarını devlet çatısı altında birleştirmek","Yükseköğretimi ücretli yapmak","Yabancı dil eğitimini zorunlu kılmak"], ans:1, exp:"3 Mart 1924'te çıkarılan Tevhid-i Tedrisat Kanunu, tüm okulları Milli Eğitim Bakanlığı'na bağlayarak eğitimde laikliği sağladı." },
+    { tag:"Çok Partili Hayat", q:"Cumhuriyet döneminde kurulan ve kısa sürede kapatılan ilk muhalefet partisi hangisidir?", opts:["Demokrat Parti","Terakkiperver Cumhuriyet Fırkası","Serbest Cumhuriyet Fırkası","Liberal Entente"], ans:2, exp:"Serbest Cumhuriyet Fırkası, Fethi Okyar önderliğinde 1930'da kuruldu; ancak beklenenden fazla taraftar toplaması üzerine aynı yıl kapatıldı." },
+  ],
+  karma: []
+};
+
+// Karma: her setten 2 soru
+function buildKarma() {
+  const all = [];
+  ['osmanli','tanzimat','kurtulus','cumhuriyet'].forEach(k => {
+    const shuffled = [...questionBank[k]].sort(()=>Math.random()-.5);
+    all.push(...shuffled.slice(0,2));
+  });
+  // Kalan 1 soru herhangi birinden
+  const extra = questionBank[['osmanli','tanzimat','kurtulus','cumhuriyet'][Math.floor(Math.random()*4)]];
+  all.push(extra[Math.floor(Math.random()*extra.length)]);
+  return all.sort(()=>Math.random()-.5).slice(0,9);
+}
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+let current = { view:'v-home', topic:null, quiz:[], qi:0, correct:0, wrong:0, answered:false };
+
+// ─── VIEW ROUTING ─────────────────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  current.view = id;
+}
+
+function goBack(to) { showView(to); }
+
+function switchTab(tab) {
+  if(tab==='home') showView('v-home');
+  else if(tab==='quiz-list') showView('v-quiz-list');
+  else if(tab==='stats') showView('v-stats');
+}
+
+// ─── TOPICS ───────────────────────────────────────────────────────────────
+function openTopic(key) {
+  const t = topics[key];
+  document.getElementById('topic-title').textContent = t.title;
+  const el = document.getElementById('topic-content');
+  el.innerHTML = `<h3>${t.title}</h3><p class="period">${t.period}</p>`;
+  t.sections.forEach((s,i) => {
+    const datesHtml = s.dates ? `<div class="key-dates"><h5>⏱ Önemli Tarihler</h5>${s.dates.map(d=>`<div class="date-row"><span class="yr">${d.year}</span><span class="ev">${d.event}</span></div>`).join('')}</div>` : '';
+    el.innerHTML += `<div class="subtopic">
+      <div class="subtopic-header" onclick="toggleSub(this)" ${i===0?'class="subtopic-header open"':''}>
+        ${s.title} <span class="chevron">›</span>
+      </div>
+      <div class="subtopic-content ${i===0?'open':''}">
+        ${s.content}${datesHtml}
+      </div>
+    </div>`;
+  });
+  showView('v-topic');
+}
+
+function toggleSub(header) {
+  header.classList.toggle('open');
+  const content = header.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+// ─── QUIZ ─────────────────────────────────────────────────────────────────
+const quizTitles = {
+  osmanli:"Osmanlı Kuruluş",tanzimat:"Tanzimat & Islahat",
+  kurtulus:"Kurtuluş Savaşı",cumhuriyet:"Cumhuriyet",karma:"Karma Test"
+};
+
+function startQuiz(key) {
+  const qs = key==='karma' ? buildKarma() : [...questionBank[key]].sort(()=>Math.random()-.5);
+  current.quiz = qs; current.qi = 0; current.correct = 0; current.wrong = 0;
+  document.getElementById('quiz-title').textContent = quizTitles[key];
+  document.getElementById('quiz-badge').textContent = qs.length + ' Soru';
+  renderQuestion();
+  showView('v-quiz');
+}
+
+function renderQuestion() {
+  const q = current.quiz[current.qi];
+  const total = current.quiz.length;
+  current.answered = false;
+
+  document.getElementById('q-num').textContent = `Soru ${current.qi+1} / ${total}`;
+  document.getElementById('q-score').textContent = `✓ ${current.correct}  ✗ ${current.wrong}`;
+  document.getElementById('q-progress').style.width = `${((current.qi+1)/total)*100}%`;
+  document.getElementById('q-tag').textContent = q.tag;
+  document.getElementById('q-text').textContent = q.q;
+
+  const opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.opts.forEach((o,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span>${o}</span>`;
+    btn.onclick = () => selectAnswer(i);
+    opts.appendChild(btn);
+  });
+
+  const exp = document.getElementById('q-explanation');
+  exp.style.display = 'none';
+  document.getElementById('btn-skip').style.display = 'block';
+  document.getElementById('btn-next').style.display = 'none';
+
+  document.getElementById('quiz-scroll').scrollTop = 0;
+}
+
+function selectAnswer(idx) {
+  if(current.answered) return;
+  current.answered = true;
+  const q = current.quiz[current.qi];
+  const btns = document.querySelectorAll('#q-options .option-btn');
+  btns.forEach((b,i) => {
+    b.disabled = true;
+    if(i===q.ans) b.classList.add('correct');
+    else if(i===idx && idx!==q.ans) b.classList.add('wrong');
+  });
+  if(idx===q.ans) current.correct++; else current.wrong++;
+
+  document.getElementById('q-exp-text').textContent = q.exp;
+  document.getElementById('q-explanation').style.display = 'block';
+  document.getElementById('btn-skip').style.display = 'none';
+  document.getElementById('btn-next').style.display = 'block';
+  document.getElementById('q-score').textContent = `✓ ${current.correct}  ✗ ${current.wrong}`;
+}
+
+function nextQuestion() {
+  current.qi++;
+  if(current.qi >= current.quiz.length) showResult();
+  else renderQuestion();
+}
+
+function showResult() {
+  const total = current.quiz.length;
+  const empty = total - current.correct - current.wrong;
+  const pct = Math.round((current.correct/total)*100);
+  document.getElementById('r-score').textContent = `${current.correct}/${total}`;
+  document.getElementById('r-pct').textContent = `%${pct}`;
+  document.getElementById('r-correct').textContent = current.correct;
+  document.getElementById('r-wrong').textContent = current.wrong;
+  document.getElementById('r-empty').textContent = empty;
+
+  let title, msg;
+  if(pct>=80){ title='Harika! 🎉'; msg='Mükemmel bir performans gösterdiniz. Bu konuya hâkimsiniz.'; }
+  else if(pct>=60){ title='İyi İş! 👏'; msg='Güzel bir sonuç. Eksik konuları tekrar gözden geçirin.'; }
+  else if(pct>=40){ title='Çalışmaya Devam!'; msg='Biraz daha pratik yapmanız gerekiyor. Konu anlatımlarını inceleyin.'; }
+  else { title='Daha Fazla Çalışın 📚'; msg='Bu konuyu derinlemesine gözden geçirmenizi öneririz.'; }
+  document.getElementById('r-title').textContent = title;
+  document.getElementById('r-msg').textContent = msg;
+  showView('v-result');
+}
+</script>
+</body>
+</html>
