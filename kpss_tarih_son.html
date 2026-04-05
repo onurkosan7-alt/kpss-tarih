@@ -326,8 +326,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <div class="chip">⏩ <b id="r-s">0</b></div>
     </div>
     <div class="result-btns">
-      <button class="btn-skip" style="flex:1" onclick="show('v-home')">Ana Sayfa</button>
-      <button class="btn-next" style="flex:2" onclick="retryLast()">Tekrar →</button>
+      <button class="btn-skip" style="flex:1" onclick="show('v-home')">🏠</button>
+      <button class="btn-skip" style="flex:2" onclick="retryLast()">↺ Tekrar</button>
+      <button class="btn-next" style="flex:2" onclick="nextBatch()">Sonraki 20 →</button>
     </div>
   </div>
 </div>
@@ -3813,6 +3814,11 @@ function showResult(){
   updateHome(); show('v-result');
 }
 function retryLast(){ startQuiz(QZ.topicKey,QZ.count); }
+
+function nextBatch(){
+  // TOPIC_IDX zaten showResult'ta güncellendi, direkt sonraki 20'yi başlat
+  startQuiz(QZ.topicKey, QZ.count);
+}
 
 // FAVORİLER
 function toggleFav(){
